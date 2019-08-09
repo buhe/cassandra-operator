@@ -59,8 +59,6 @@ public class OperatorService extends AbstractExecutionThreadService {
             List<String> ips = event.endpoints.getSubsets().get(0).getAddresses()
                     .stream().map(V1EndpointAddress::getIp).collect(Collectors.toList());
 
-            System.out.println("-----------ddd-----" + ips);
-
         }
 
 
