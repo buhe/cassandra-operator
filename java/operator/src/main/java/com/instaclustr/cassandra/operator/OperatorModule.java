@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
+import com.instaclustr.cassandra.crossdc.DataSyncModule;
 import com.instaclustr.cassandra.operator.controller.DataCenterControllerFactory;
 import com.instaclustr.cassandra.operator.service.BackupControllerService;
 import com.instaclustr.cassandra.operator.service.CassandraHealthCheckService;
@@ -31,5 +32,6 @@ public class OperatorModule extends AbstractModule {
         install(new EndpointWatchModule());
         install(new ConfigMapWatchModule());
         install(new BackupWatchModule());
+        install(new DataSyncModule());
     }
 }

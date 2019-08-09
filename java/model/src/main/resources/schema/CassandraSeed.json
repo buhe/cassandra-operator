@@ -1,0 +1,33 @@
+{
+  "info": {
+    "title": "CassandraSeed",
+    "version": "v1"
+  },
+  "type": "object",
+  "javaType": "com.instaclustr.cassandra.operator.model.Seed",
+  "properties": {
+    "apiVersion": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "metadata": {
+      "javaType": "io.kubernetes.client.models.V1ObjectMeta",
+      "type": "object"
+    },
+    "spec": {
+      "javaType": "com.instaclustr.cassandra.operator.model.SeedSpec",
+      "type": "object",
+      "properties": {
+        "address": {
+          "description": "Number of Cassandra nodes in this data center.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

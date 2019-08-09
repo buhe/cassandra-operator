@@ -3,6 +3,7 @@ package com.instaclustr.cassandra.operator.service;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.instaclustr.cassandra.crossdc.LocalDataSync;
 import com.instaclustr.cassandra.operator.controller.DataCenterControllerFactory;
 import com.instaclustr.cassandra.operator.event.*;
 import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
@@ -35,13 +36,15 @@ public class OperatorService extends AbstractExecutionThreadService {
 
     private final DataCenterControllerFactory dataCenterControllerFactory;
     private final ResourceCache<DataCenterKey, DataCenter> dataCenterCache;
+    private LocalDataSync localDataSync;
 
     private final BlockingQueue<DataCenterKey> dataCenterQueue = new LinkedBlockingQueue<>();
 
     @Inject
-    public OperatorService(final DataCenterControllerFactory dataCenterControllerFactory, final ResourceCache<DataCenterKey, DataCenter> dataCenterCache) {
+    public OperatorService(final DataCenterControllerFactory dataCenterControllerFactory, final ResourceCache<DataCenterKey, DataCenter> dataCenterCache, final LocalDataSync localDataSync) {
         this.dataCenterControllerFactory = dataCenterControllerFactory;
         this.dataCenterCache = dataCenterCache;
+        this.localDataSync = localDataSync;
     }
 
     synchronized private void addToQueue(final DataCenterKey key) {
@@ -56,9 +59,10 @@ public class OperatorService extends AbstractExecutionThreadService {
     @Subscribe
     void endpointEvent(final EndpointWatchEvent event) {
         if (event.endpoints.getMetadata().getName().contains("-seeds")) {
-            List<String> ips = event.endpoints.getSubsets().get(0).getAddresses()
+            List<String> address = event.endpoints.getSubsets().get(0).getAddresses()
                     .stream().map(V1EndpointAddress::getIp).collect(Collectors.toList());
 
+            localDataSync.syncEndpointToCRD(address);
         }
 
 

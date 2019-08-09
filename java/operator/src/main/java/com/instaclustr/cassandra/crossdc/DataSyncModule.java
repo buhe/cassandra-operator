@@ -6,6 +6,6 @@ public class DataSyncModule extends AbstractModule {
 
     @Override
     protected void configure() {
-
+        bind(LocalDataSync.class);
     }
 }
