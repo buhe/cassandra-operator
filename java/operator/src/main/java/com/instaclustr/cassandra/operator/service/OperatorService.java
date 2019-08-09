@@ -13,13 +13,17 @@ import com.instaclustr.cassandra.sidecar.model.Status;
 import com.instaclustr.guava.EventBusSubscriber;
 import com.instaclustr.k8s.watch.ResourceCache;
 import com.instaclustr.slf4j.MDC;
+import io.kubernetes.client.models.V1EndpointAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 import static com.instaclustr.cassandra.operator.k8s.K8sLoggingSupport.putNamespacedName;
 
@@ -47,6 +51,20 @@ public class OperatorService extends AbstractExecutionThreadService {
         }
 
         dataCenterQueue.add(key);
+    }
+
+    @Subscribe
+    void endpointEvent(final EndpointWatchEvent event) {
+        if (event.endpoints.getMetadata().getName().contains("-seeds")) {
+            List<String> ips = event.endpoints.getSubsets().get(0).getAddresses()
+                    .stream().map(V1EndpointAddress::getIp).collect(Collectors.toList());
+
+            System.out.println("-----------ddd-----" + ips);
+
+        }
+
+
+        // TODO: map the Cluster object to one or more DC objects, then post a message on the queue for them - When we support cluster objects
     }
 
     @Subscribe

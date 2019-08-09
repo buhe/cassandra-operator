@@ -28,6 +28,7 @@ public class OperatorModule extends AbstractModule {
         install(new ClusterWatchModule());
         install(new DataCenterWatchModule());
         install(new StatefulSetWatchModule());
+        install(new EndpointWatchModule());
         install(new ConfigMapWatchModule());
         install(new BackupWatchModule());
     }

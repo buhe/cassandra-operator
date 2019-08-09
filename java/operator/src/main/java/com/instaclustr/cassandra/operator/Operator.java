@@ -1,6 +1,7 @@
 package com.instaclustr.cassandra.operator;
 
 import com.google.inject.*;
+import com.instaclustr.cassandra.crossdc.DataSyncModule;
 import com.instaclustr.cassandra.operator.configuration.DeletePVC;
 import com.instaclustr.cassandra.operator.configuration.Namespace;
 import com.instaclustr.cassandra.operator.k8s.K8sApiVersionValidator;
@@ -12,6 +13,7 @@ import com.instaclustr.guava.EventBusModule;
 import com.instaclustr.guava.ServiceManagerModule;
 import com.instaclustr.k8s.K8sModule;
 import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.util.ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,7 +118,8 @@ public class Operator implements Callable<Void> {
                 new EventBusModule(),
                 new K8sModule(),
                 new PreflightModule(),
-                new OperatorModule()
+                new OperatorModule(),
+                new DataSyncModule()
         );
 
         injector.getInstance(K8sApiVersionValidator.class).call();
