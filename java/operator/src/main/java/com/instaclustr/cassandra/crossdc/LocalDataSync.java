@@ -3,6 +3,7 @@ package com.instaclustr.cassandra.crossdc;
 import com.google.common.eventbus.EventBus;
 import com.instaclustr.cassandra.operator.configuration.Namespace;
 import com.instaclustr.cassandra.operator.k8s.K8sResourceUtils;
+import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
 import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.SeedList;
 import com.instaclustr.cassandra.operator.model.SeedSpec;
@@ -26,28 +27,28 @@ public class LocalDataSync implements Callable<Void> {
     private final CustomObjectsApi customObjectsApi;
     private final String namespace;
     private final EventBus eventBus;
-    private final SharedInformerFactory sharedInformerFactory;
+    private SharedInformerFactory sharedInformerFactory = new SharedInformerFactory();
 
     @Inject
     public LocalDataSync(final ApiClient apiClient,
                          final CustomObjectsApi customObjectsApi,
-                         @Namespace final String namespace, EventBus eventBus, SharedInformerFactory sharedInformerFactory) {
+                         @Namespace final String namespace, EventBus eventBus) {
         this.apiClient = apiClient;
         this.customObjectsApi = customObjectsApi;
         this.namespace = namespace;
         this.eventBus = eventBus;
-        this.sharedInformerFactory = sharedInformerFactory;
     }
 
 
     // endpoint -> local crd
-    public void syncEndpointToCRD(List<String> address) {
+    public void syncEndpointToCRD(String dataCenterName, List<String> address) {
 
         Seed seed = new Seed();
         seed.withMetadata(
                 new V1ObjectMeta()
                         .namespace(namespace)
-                        .name("seed-" + namespace));
+                        .putLabelsItem(OperatorLabels.DATACENTER, dataCenterName)
+                        .name("seed-" + dataCenterName + "-" + namespace));
         seed.withApiVersion("stable.instaclustr.com/v1").withKind("CassandraSeed");
         seed.withSpec(new SeedSpec().withAddress(address));
 
@@ -76,7 +77,7 @@ public class LocalDataSync implements Callable<Void> {
                                         .listNamespacedCustomObjectCall(
                                                 "stable.instaclustr.com",
                                                 "v1",
-                                                "cassandra-operator-broker",
+                                                namespace,
                                                 "cassandra-seeds",
                                                 null,
                                                 null,

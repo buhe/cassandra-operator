@@ -15,16 +15,18 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.concurrent.Callable;
 
+/**
+ * Sync broker seed and send Remote Seed Change Event
+ */
 @Singleton
 public class BrokerDataSync implements Callable {
 
-    private SharedInformerFactory sharedInformerFactory;
+    private SharedInformerFactory sharedInformerFactory = new SharedInformerFactory();
     private BrokerClient brokerClient;
     private EventBus eventBus;
 
     @Inject
-    public BrokerDataSync(SharedInformerFactory sharedInformerFactory, BrokerClient brokerClient, EventBus eventBus) {
-        this.sharedInformerFactory = sharedInformerFactory;
+    public BrokerDataSync(BrokerClient brokerClient, EventBus eventBus) {
         this.brokerClient = brokerClient;
         this.eventBus = eventBus;
     }
@@ -41,7 +43,7 @@ public class BrokerDataSync implements Callable {
                                         .listNamespacedCustomObjectCall(
                                                 "stable.instaclustr.com",
                                                 "v1",
-                                                "cassandra-operator-broker",
+                                                BrokerClient.NAMESPACE,
                                                 "cassandra-seeds",
                                                 null,
                                                 null,

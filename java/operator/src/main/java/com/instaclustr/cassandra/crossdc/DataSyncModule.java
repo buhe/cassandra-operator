@@ -11,7 +11,5 @@ public class DataSyncModule extends AbstractModule {
         bind(LocalDataSync.class);
         bind(BrokerDataSync.class);
         bind(BrokerClient.class);
-        bind(DataSyncExchange.class);
-        bind(SharedInformerFactory.class).toInstance(new SharedInformerFactory());
     }
 }

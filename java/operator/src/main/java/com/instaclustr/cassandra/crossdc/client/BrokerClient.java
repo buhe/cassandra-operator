@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class BrokerClient {
 
     private ApiClient apiClient;
+    public static final String NAMESPACE = "cassandra-operator-broker";
 
     @Inject
     public BrokerClient() {

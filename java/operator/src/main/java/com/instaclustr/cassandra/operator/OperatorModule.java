@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
+import com.instaclustr.cassandra.crossdc.DataSyncExchange;
 import com.instaclustr.cassandra.crossdc.DataSyncModule;
 import com.instaclustr.cassandra.operator.controller.DataCenterControllerFactory;
 import com.instaclustr.cassandra.operator.service.BackupControllerService;
@@ -21,6 +22,7 @@ public class OperatorModule extends AbstractModule {
         serviceMultibinder.addBinding().to(OperatorService.class);
         serviceMultibinder.addBinding().to(CassandraHealthCheckService.class);
         serviceMultibinder.addBinding().to(BackupControllerService.class);
+        serviceMultibinder.addBinding().to(DataSyncExchange.class);
 
         install(new SidecarClientModule());
 

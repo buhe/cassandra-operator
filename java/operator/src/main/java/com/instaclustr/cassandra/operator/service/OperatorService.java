@@ -9,9 +9,7 @@ import com.instaclustr.cassandra.operator.controller.DataCenterControllerFactory
 import com.instaclustr.cassandra.operator.event.*;
 import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
 import com.instaclustr.cassandra.operator.model.DataCenter;
-import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.key.DataCenterKey;
-import com.instaclustr.cassandra.operator.event.DataCenterWatchEvent;
 import com.instaclustr.cassandra.sidecar.model.Status;
 import com.instaclustr.guava.EventBusSubscriber;
 import com.instaclustr.k8s.watch.ResourceCache;
@@ -21,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -60,17 +57,19 @@ public class OperatorService extends AbstractExecutionThreadService {
 
     @Subscribe
     void endpointEvent(final EndpointWatchEvent event) {
+        // FIXME
+        // use label
         if (event.endpoints.getMetadata().getName().contains("-seeds")) {
             List<String> address = event.endpoints.getSubsets().get(0).getAddresses()
                     .stream().map(V1EndpointAddress::getIp).collect(Collectors.toList());
-
-            localDataSync.syncEndpointToCRD(address);
+            final String dataCenterName = event.endpoints.getMetadata().getLabels().get(OperatorLabels.DATACENTER);
+            localDataSync.syncEndpointToCRD(dataCenterName, address);
         }
         // TODO: map the Cluster object to one or more DC objects, then post a message on the queue for them - When we support cluster objects
     }
 
     @Subscribe
-    void localSeedCrdChanged(LocalSeedChangeEvent seed){
+    void localSeedCrdChanged(LocalSeedChangeEvent seed) {
         //1. update seed provider
 
     }
