@@ -21,11 +21,15 @@
       "type": "object",
       "properties": {
         "address": {
-          "description": "Number of Cassandra nodes in this data center.",
+          "description": "Seed address of Cassandra in this data center.",
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "name": {
+          "description": "Name of Cassandra in this data center.",
+          "type": "string"
         }
       }
     }

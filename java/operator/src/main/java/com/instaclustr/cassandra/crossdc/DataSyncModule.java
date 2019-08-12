@@ -9,8 +9,9 @@ public class DataSyncModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(LocalDataSync.class);
-        bind(BrokerClient.class);
         bind(BrokerDataSync.class);
+        bind(BrokerClient.class);
+        bind(DataSyncExchange.class);
         bind(SharedInformerFactory.class).toInstance(new SharedInformerFactory());
     }
 }

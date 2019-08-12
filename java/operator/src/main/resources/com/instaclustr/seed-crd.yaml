@@ -25,6 +25,9 @@ spec:
       properties:
         spec:
           properties:
+            datacenter:
+              type: string
+              description: Cassandra data center
             address:
               type: array
               description: Cassandra seed address

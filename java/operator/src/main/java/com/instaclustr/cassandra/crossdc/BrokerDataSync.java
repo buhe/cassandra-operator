@@ -63,27 +63,27 @@ public class BrokerDataSync implements Callable {
                 new ResourceEventHandler<Seed>() {
                     @Override
                     public void onAdd(Seed node) {
-                        System.out.printf("%s node added!\n", node.getMetadata().getName());
+//                        System.out.printf("%s node added!\n", node.getMetadata().getName());
 
-                        System.out.println("-----------currnet node is " + seedInformer.getIndexer().list());
+//                        System.out.println("-----------currnet node is " + seedInformer.getIndexer().list());
                         eventBus.post(new RemoteSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
 
                     @Override
                     public void onUpdate(Seed oldNode, Seed newNode) {
-                        System.out.printf(
-                                "%s => %s node updated!\n",
-                                oldNode.getMetadata().getName(), newNode.getMetadata().getName());
-
-                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
+//                        System.out.printf(
+//                                "%s => %s node updated!\n",
+//                                oldNode.getMetadata().getName(), newNode.getMetadata().getName());
+//
+//                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
                         eventBus.post(new RemoteSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
 
                     @Override
                     public void onDelete(Seed node, boolean deletedFinalStateUnknown) {
-                        System.out.printf("%s node deleted!\n", node.getMetadata().getName());
-
-                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
+//                        System.out.printf("%s node deleted!\n", node.getMetadata().getName());
+//
+//                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
                         eventBus.post(new RemoteSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
                 });

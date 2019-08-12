@@ -4,6 +4,9 @@ package com.instaclustr.cassandra.crossdc;
 import com.google.common.eventbus.Subscribe;
 import com.instaclustr.cassandra.operator.model.Seed;
 
+import javax.inject.Singleton;
+
+@Singleton
 public class DataSyncExchange {
 
     private boolean isLocalCluster(Seed seed) {

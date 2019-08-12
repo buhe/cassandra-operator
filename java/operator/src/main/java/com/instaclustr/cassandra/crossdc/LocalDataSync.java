@@ -1,6 +1,5 @@
 package com.instaclustr.cassandra.crossdc;
 
-import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.instaclustr.cassandra.operator.configuration.Namespace;
 import com.instaclustr.cassandra.operator.k8s.K8sResourceUtils;
@@ -56,13 +55,14 @@ public class LocalDataSync implements Callable<Void> {
             K8sResourceUtils.createOrReplaceResource(() -> {
                 customObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
             }, () -> {
-
+                // TODO
+//                customObjectsApi.patchNamespacedCustomObject()
             });
         } catch (ApiException e) {
             e.printStackTrace();
         }
 
-        eventBus.post(new LocalSeedChangeEvent(Lists.newArrayList(seed)));
+//        eventBus.post(new LocalSeedChangeEvent(Lists.newArrayList(seed)));
     }
 
     @Override
@@ -98,27 +98,27 @@ public class LocalDataSync implements Callable<Void> {
                 new ResourceEventHandler<Seed>() {
                     @Override
                     public void onAdd(Seed node) {
-                        System.out.printf("%s node added!\n", node.getMetadata().getName());
-
-                        System.out.println("-----------currnet node is " + seedInformer.getIndexer().list());
+//                        System.out.printf("%s node added!\n", node.getMetadata().getName());
+//
+//                        System.out.println("-----------currnet node is " + seedInformer.getIndexer().list());
                         eventBus.post(new LocalSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
 
                     @Override
                     public void onUpdate(Seed oldNode, Seed newNode) {
-                        System.out.printf(
-                                "%s => %s node updated!\n",
-                                oldNode.getMetadata().getName(), newNode.getMetadata().getName());
-
-                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
+//                        System.out.printf(
+//                                "%s => %s node updated!\n",
+//                                oldNode.getMetadata().getName(), newNode.getMetadata().getName());
+//
+//                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
                         eventBus.post(new LocalSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
 
                     @Override
                     public void onDelete(Seed node, boolean deletedFinalStateUnknown) {
-                        System.out.printf("%s node deleted!\n", node.getMetadata().getName());
-
-                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
+//                        System.out.printf("%s node deleted!\n", node.getMetadata().getName());
+//
+//                        System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
                         eventBus.post(new LocalSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
                 });

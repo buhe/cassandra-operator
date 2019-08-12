@@ -11,3 +11,4 @@
 *.jar
 
 dependency-reduced-pom.xml
+java/operator/src/main/resources/kube-config
