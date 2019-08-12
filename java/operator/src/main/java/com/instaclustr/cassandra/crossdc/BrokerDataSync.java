@@ -1,72 +1,37 @@
 package com.instaclustr.cassandra.crossdc;
 
-import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
-import com.instaclustr.cassandra.operator.configuration.Namespace;
-import com.instaclustr.cassandra.operator.k8s.K8sResourceUtils;
+import com.instaclustr.cassandra.crossdc.client.BrokerClient;
 import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.SeedList;
-import com.instaclustr.cassandra.operator.model.SeedSpec;
-import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
-import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.CallGeneratorParams;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 @Singleton
-public class LocalDataSync implements Callable<Void> {
-    private final ApiClient apiClient;
-    private final CustomObjectsApi customObjectsApi;
-    private final String namespace;
-    private final EventBus eventBus;
-    private final SharedInformerFactory sharedInformerFactory;
+public class BrokerDataSync implements Callable {
+
+    private SharedInformerFactory sharedInformerFactory;
+    private BrokerClient brokerClient;
+    private EventBus eventBus;
 
     @Inject
-    public LocalDataSync(final ApiClient apiClient,
-                         final CustomObjectsApi customObjectsApi,
-                         @Namespace final String namespace, EventBus eventBus, SharedInformerFactory sharedInformerFactory) {
-        this.apiClient = apiClient;
-        this.customObjectsApi = customObjectsApi;
-        this.namespace = namespace;
-        this.eventBus = eventBus;
+    public BrokerDataSync(SharedInformerFactory sharedInformerFactory, BrokerClient brokerClient, EventBus eventBus) {
         this.sharedInformerFactory = sharedInformerFactory;
+        this.brokerClient = brokerClient;
+        this.eventBus = eventBus;
     }
 
-
-    // endpoint -> local crd
-    public void syncEndpointToCRD(List<String> address) {
-
-        Seed seed = new Seed();
-        seed.withMetadata(
-                new V1ObjectMeta()
-                        .namespace(namespace)
-                        .name("seed-" + namespace));
-        seed.withApiVersion("stable.instaclustr.com/v1").withKind("CassandraSeed");
-        seed.withSpec(new SeedSpec().withAddress(address));
-
-        try {
-            K8sResourceUtils.createOrReplaceResource(() -> {
-                customObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
-            }, () -> {
-
-            });
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
-
-        eventBus.post(new LocalSeedChangeEvent(Lists.newArrayList(seed)));
-    }
-
-    @Override
     public Void call() throws Exception {
+
+        CustomObjectsApi customObjectsApi = new CustomObjectsApi(this.brokerClient.getBrokerClient());
 
         SharedIndexInformer<Seed> seedInformer =
                 this.sharedInformerFactory.sharedIndexInformerFor(
@@ -101,7 +66,7 @@ public class LocalDataSync implements Callable<Void> {
                         System.out.printf("%s node added!\n", node.getMetadata().getName());
 
                         System.out.println("-----------currnet node is " + seedInformer.getIndexer().list());
-                        eventBus.post(new LocalSeedChangeEvent(seedInformer.getIndexer().list()));
+                        eventBus.post(new RemoteSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
 
                     @Override
@@ -111,7 +76,7 @@ public class LocalDataSync implements Callable<Void> {
                                 oldNode.getMetadata().getName(), newNode.getMetadata().getName());
 
                         System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
-                        eventBus.post(new LocalSeedChangeEvent(seedInformer.getIndexer().list()));
+                        eventBus.post(new RemoteSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
 
                     @Override
@@ -119,14 +84,19 @@ public class LocalDataSync implements Callable<Void> {
                         System.out.printf("%s node deleted!\n", node.getMetadata().getName());
 
                         System.out.println("-------------currnet node is " + seedInformer.getIndexer().list());
-                        eventBus.post(new LocalSeedChangeEvent(seedInformer.getIndexer().list()));
+                        eventBus.post(new RemoteSeedChangeEvent(seedInformer.getIndexer().list()));
                     }
                 });
 
         sharedInformerFactory.startAllRegisteredInformers();
 
-        System.out.println("--------local seed list----------" + seedInformer.getIndexer().list());
+        System.out.println("--------remote seed list----------" + seedInformer.getIndexer().list());
 
         return null;
+
+    }
+
+    public void close() {
+
     }
 }

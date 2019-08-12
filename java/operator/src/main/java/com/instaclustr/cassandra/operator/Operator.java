@@ -1,6 +1,7 @@
 package com.instaclustr.cassandra.operator;
 
 import com.google.inject.*;
+import com.instaclustr.cassandra.crossdc.BrokerDataSync;
 import com.instaclustr.cassandra.crossdc.DataSyncModule;
 import com.instaclustr.cassandra.operator.configuration.DeletePVC;
 import com.instaclustr.cassandra.operator.configuration.Namespace;
@@ -118,11 +119,12 @@ public class Operator implements Callable<Void> {
                 new EventBusModule(),
                 new K8sModule(),
                 new PreflightModule(),
-                new OperatorModule(),
-                new DataSyncModule()
+                new OperatorModule()
         );
 
         injector.getInstance(K8sApiVersionValidator.class).call();
+
+        injector.getInstance(BrokerDataSync.class).call();
 
         // run Preflight operations
         injector.getInstance(Preflight.class).call();

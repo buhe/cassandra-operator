@@ -96,13 +96,13 @@ public class K8sResourceUtils {
     public void deleteService(final V1Service service) throws ApiException {
         final V1ObjectMeta metadata = service.getMetadata();
 
-        coreApi.deleteNamespacedService(metadata.getName(), metadata.getNamespace(), new V1DeleteOptions(), null, null, null, null, null);
+        coreApi.deleteNamespacedService(metadata.getName(), metadata.getNamespace(),null ,new V1DeleteOptions(), null, null, null, null);
     }
 
     public void deleteConfigMap(final V1ConfigMap configMap) throws ApiException {
         final V1ObjectMeta configMapMetadata = configMap.getMetadata();
 
-        coreApi.deleteNamespacedConfigMap(configMapMetadata.getName(), configMapMetadata.getNamespace(), new V1DeleteOptions(), null, null, null, null, null);
+        coreApi.deleteNamespacedConfigMap(configMapMetadata.getName(), configMapMetadata.getNamespace(), null,new V1DeleteOptions(), null, null, null, null);
     }
 
     public void deleteStatefulSet(final V1beta2StatefulSet statefulSet) throws ApiException {
@@ -127,7 +127,7 @@ public class K8sResourceUtils {
 
         final V1ObjectMeta statefulSetMetadata = statefulSet.getMetadata();
 
-        appsApi.deleteNamespacedStatefulSet(statefulSetMetadata.getName(), statefulSetMetadata.getNamespace(), deleteOptions, null, null, null, false, "Foreground");
+        appsApi.deleteNamespacedStatefulSet(statefulSetMetadata.getName(), statefulSetMetadata.getNamespace(), null,deleteOptions, null, null,false, "Foreground");
     }
 
     public void deletePersistentVolumeAndPersistentVolumeClaim(final V1Pod pod) throws ApiException {
@@ -141,8 +141,8 @@ public class K8sResourceUtils {
             final String pvcName = pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim().getClaimName();
             final V1PersistentVolumeClaim pvc = coreApi.readNamespacedPersistentVolumeClaim(pvcName, pod.getMetadata().getNamespace(), null, null, null);
 
-            coreApi.deleteNamespacedPersistentVolumeClaim(pvcName, pod.getMetadata().getNamespace(), deleteOptions, null, null, null, null, null);
-            coreApi.deletePersistentVolume(pvc.getSpec().getVolumeName(), deleteOptions, null, null, null, null, null);
+            coreApi.deleteNamespacedPersistentVolumeClaim(pvcName, pod.getMetadata().getNamespace(), null,deleteOptions, null, null, null, null);
+            coreApi.deletePersistentVolume(pvc.getSpec().getVolumeName(), null,deleteOptions, null, null, null, null);
         }
     }
 

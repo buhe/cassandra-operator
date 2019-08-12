@@ -4,10 +4,12 @@ import com.google.common.collect.Sets;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.instaclustr.cassandra.crossdc.LocalDataSync;
+import com.instaclustr.cassandra.crossdc.LocalSeedChangeEvent;
 import com.instaclustr.cassandra.operator.controller.DataCenterControllerFactory;
 import com.instaclustr.cassandra.operator.event.*;
 import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
 import com.instaclustr.cassandra.operator.model.DataCenter;
+import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.key.DataCenterKey;
 import com.instaclustr.cassandra.operator.event.DataCenterWatchEvent;
 import com.instaclustr.cassandra.sidecar.model.Status;
@@ -64,9 +66,13 @@ public class OperatorService extends AbstractExecutionThreadService {
 
             localDataSync.syncEndpointToCRD(address);
         }
-
-
         // TODO: map the Cluster object to one or more DC objects, then post a message on the queue for them - When we support cluster objects
+    }
+
+    @Subscribe
+    void localSeedCrdChanged(LocalSeedChangeEvent seed){
+        //1. update seed provider
+
     }
 
     @Subscribe

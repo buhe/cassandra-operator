@@ -61,7 +61,7 @@ public class BackupWatchModule extends AbstractModule {
 
         @Override
         protected Call listResources(final String continueToken, final String resourceVersion, final boolean watch) throws ApiException {
-            return customObjectsApi.listNamespacedCustomObjectCall("stable.instaclustr.com", "v1", namespace, "cassandra-backups", null, null, resourceVersion, watch, null, null);
+            return customObjectsApi.listNamespacedCustomObjectCall("stable.instaclustr.com", "v1", namespace, "cassandra-backups", null, null, resourceVersion, null,watch, null, null);
         }
 
         @Override
