@@ -306,6 +306,7 @@ public class DataCenterReconciliationController {
                                 )
                         );
             }
+            podSpec.setServiceAccountName("cassandra-operator");
 
             final V1beta2StatefulSet statefulSet = new V1beta2StatefulSet()
                     .metadata(statefulSetMetadata)
@@ -377,8 +378,8 @@ public class DataCenterReconciliationController {
 
             // messy -- constructs via org.apache.cassandra.config.ParameterizedClass.ParameterizedClass(java.util.Map<java.lang.String,?>)
             config.put("seed_provider", ImmutableList.of(ImmutableMap.of(
-                            "class_name", "com.instaclustr.cassandra.k8s.SeedProvider",
-                            "parameters", ImmutableList.of(ImmutableMap.of("service", seedNodesService.getMetadata().getName()))
+                            "class_name", "com.instaclustr.cassandra.k8s.CrossDCSeedProvider",
+                            "parameters", ImmutableList.of(ImmutableMap.of("namespace", seedNodesService.getMetadata().getNamespace()))
                     )));
 
 
