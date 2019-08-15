@@ -103,7 +103,7 @@ public class Operator implements Callable<Void> {
 
         logCommandVersionInformation(commandSpec);
 
-        final ApiClient apiClient = ClientBuilder.standard().build();
+        final ApiClient apiClient = ClientBuilder.standard().setOverridePatchFormat("application/json-patch+json").build();
 
         final Injector injector = Guice.createInjector(
                 new AbstractModule() {

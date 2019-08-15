@@ -1,9 +1,13 @@
 package com.instaclustr.cassandra.crossdc;
 
 import com.google.common.eventbus.EventBus;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.instaclustr.cassandra.operator.configuration.Namespace;
 import com.instaclustr.cassandra.operator.k8s.K8sResourceUtils;
 import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
+import com.instaclustr.cassandra.operator.k8s.PatchOperation;
 import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.SeedList;
 import com.instaclustr.cassandra.operator.model.SeedSpec;
@@ -18,6 +22,7 @@ import io.kubernetes.client.util.CallGeneratorParams;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -28,6 +33,7 @@ public class LocalDataSync implements Callable<Void> {
     private final String namespace;
     private final EventBus eventBus;
     private SharedInformerFactory sharedInformerFactory = new SharedInformerFactory();
+    private final static Gson gson = new Gson();
 
     @Inject
     public LocalDataSync(final ApiClient apiClient,
@@ -55,11 +61,15 @@ public class LocalDataSync implements Callable<Void> {
 
         try {
             K8sResourceUtils.createOrReplaceResource(() -> {
-                customObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
                 System.out.println("create local crd seed " + address);
+                customObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
             }, () -> {
                 System.out.println("change local crd seed " + address);
-                customObjectsApi.replaceNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seedName, seed);
+                ArrayList<JsonObject> operations = new ArrayList<>();
+                PatchOperation patchOperation = new PatchOperation("/spec/address", address);
+                JsonElement element = gson.toJsonTree(patchOperation);
+                operations.add((JsonObject) element);
+                customObjectsApi.patchNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seedName, operations);
             });
         } catch (ApiException e) {
             e.printStackTrace();

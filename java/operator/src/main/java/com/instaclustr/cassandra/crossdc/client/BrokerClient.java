@@ -29,7 +29,7 @@ public class BrokerClient {
     public BrokerClient() {
         InputStream kubeConfig = this.getClass().getClassLoader().getResourceAsStream("kube-config");
         try {
-            apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new InputStreamReader(kubeConfig))).build();
+            apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new InputStreamReader(kubeConfig))).setOverridePatchFormat("application/json-patch+json").build();
             apiClient.getHttpClient().setReadTimeout(60, TimeUnit.SECONDS);
         } catch (IOException e) {
             e.printStackTrace();

@@ -3,10 +3,14 @@ package com.instaclustr.cassandra.crossdc;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.instaclustr.cassandra.crossdc.client.BrokerClient;
 import com.instaclustr.cassandra.operator.configuration.Namespace;
 import com.instaclustr.cassandra.operator.k8s.K8sResourceUtils;
 import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
+import com.instaclustr.cassandra.operator.k8s.PatchOperation;
 import com.instaclustr.cassandra.operator.model.DataCenter;
 import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.key.DataCenterKey;
@@ -16,6 +20,7 @@ import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.models.V1ObjectMeta;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 
 @EventBusSubscriber
 public class DataSyncExchange extends AbstractExecutionThreadService {
@@ -24,6 +29,7 @@ public class DataSyncExchange extends AbstractExecutionThreadService {
     private final String namespace;
     private final CustomObjectsApi brokerObjectsApi;
     private final CustomObjectsApi localObjectsApi;
+    private final static Gson gson = new Gson();
 
     @Inject
     public DataSyncExchange(BrokerClient brokerClient,
@@ -70,8 +76,12 @@ public class DataSyncExchange extends AbstractExecutionThreadService {
                         brokerObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", BrokerClient.NAMESPACE, "cassandra-seeds", seed, null);
                         System.out.println("create " + oldMetadata.getName() + " to broker");
                     }, () -> {
-                        brokerObjectsApi.replaceNamespacedCustomObject("stable.instaclustr.com", "v1", BrokerClient.NAMESPACE, "cassandra-seeds", oldMetadata.getName(), seed);
                         System.out.println("sync " + oldMetadata.getName() + " to broker");
+                        ArrayList<JsonObject> operations = new ArrayList<>();
+                        PatchOperation patchOperation = new PatchOperation("/spec/address", seed.getSpec().getAddress());
+                        JsonElement element = gson.toJsonTree(patchOperation);
+                        operations.add((JsonObject) element);
+                        brokerObjectsApi.patchNamespacedCustomObject("stable.instaclustr.com", "v1", BrokerClient.NAMESPACE, "cassandra-seeds", oldMetadata.getName(), operations);
                     });
                 } else {
 //                    System.out.println("remote crd skip");
@@ -85,6 +95,7 @@ public class DataSyncExchange extends AbstractExecutionThreadService {
     @Subscribe
     void remoteSeedCrdChanged(RemoteSeedChangeEvent seedChangeEvent) {
         //1. filter local cluster seed and update other local seed
+        // FIXME - in queue
         seedChangeEvent.getSeeds().forEach((seed) -> {
             try {
                 if (!isLocalCluster(seed)) {
@@ -97,11 +108,15 @@ public class DataSyncExchange extends AbstractExecutionThreadService {
                     newMetadata.setAnnotations(oldMetadata.getAnnotations());
                     seed.setMetadata(newMetadata);
                     K8sResourceUtils.createOrReplaceResource(() -> {
-                        localObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
                         System.out.println("create " + oldMetadata.getName() + " from broker to local");
+                        localObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
                     }, () -> {
-                        localObjectsApi.replaceNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", oldMetadata.getName(), seed);
                         System.out.println("sync " + oldMetadata.getName() + " from broker to local");
+                        ArrayList<JsonObject> operations = new ArrayList<>();
+                        PatchOperation patchOperation = new PatchOperation("/spec/address", seed.getSpec().getAddress());
+                        JsonElement element = gson.toJsonTree(patchOperation);
+                        operations.add((JsonObject) element);
+                        localObjectsApi.patchNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", oldMetadata.getName(), operations);
                     });
                 } else {
 //                    System.out.println("local crd skip");
