@@ -43,21 +43,23 @@ public class LocalDataSync implements Callable<Void> {
     // endpoint -> local crd
     public void syncEndpointToCRD(String dataCenterName, List<String> address) {
 
+        String seedName = "seed-" + dataCenterName + "-" + namespace;
         Seed seed = new Seed();
         seed.withMetadata(
                 new V1ObjectMeta()
                         .namespace(namespace)
                         .putLabelsItem(OperatorLabels.DATACENTER, dataCenterName)
-                        .name("seed-" + dataCenterName + "-" + namespace));
+                        .name(seedName));
         seed.withApiVersion("stable.instaclustr.com/v1").withKind("CassandraSeed");
         seed.withSpec(new SeedSpec().withAddress(address));
 
         try {
             K8sResourceUtils.createOrReplaceResource(() -> {
                 customObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
+                System.out.println("create local crd seed " + address);
             }, () -> {
-                // TODO
-//                customObjectsApi.patchNamespacedCustomObject()
+                System.out.println("change local crd seed " + address);
+                customObjectsApi.replaceNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seedName, seed);
             });
         } catch (ApiException e) {
             e.printStackTrace();

@@ -52,7 +52,7 @@ public class DataSyncExchange extends AbstractExecutionThreadService {
     @Subscribe
     void localSeedCrdChanged(LocalSeedChangeEvent seedChangeEvent) {
 
-        System.out.println("local seed event");
+//        System.out.println("local seed event");
 
         //1. only update remote local cluster crd
         seedChangeEvent.getSeeds().forEach((seed) -> {
@@ -68,11 +68,13 @@ public class DataSyncExchange extends AbstractExecutionThreadService {
                     // update remote crd
                     K8sResourceUtils.createOrReplaceResource(() -> {
                         brokerObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", BrokerClient.NAMESPACE, "cassandra-seeds", seed, null);
+                        System.out.println("create " + oldMetadata.getName() + " to broker");
                     }, () -> {
-
+                        brokerObjectsApi.replaceNamespacedCustomObject("stable.instaclustr.com", "v1", BrokerClient.NAMESPACE, "cassandra-seeds", oldMetadata.getName(), seed);
+                        System.out.println("sync " + oldMetadata.getName() + " to broker");
                     });
                 } else {
-                    System.out.println("remote crd skip");
+//                    System.out.println("remote crd skip");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -96,11 +98,13 @@ public class DataSyncExchange extends AbstractExecutionThreadService {
                     seed.setMetadata(newMetadata);
                     K8sResourceUtils.createOrReplaceResource(() -> {
                         localObjectsApi.createNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", seed, null);
+                        System.out.println("create " + oldMetadata.getName() + " from broker to local");
                     }, () -> {
-
+                        localObjectsApi.replaceNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", oldMetadata.getName(), seed);
+                        System.out.println("sync " + oldMetadata.getName() + " from broker to local");
                     });
                 } else {
-                    System.out.println("local crd skip");
+//                    System.out.println("local crd skip");
                 }
             } catch (Exception e) {
                 e.printStackTrace();

@@ -60,10 +60,13 @@ public class OperatorService extends AbstractExecutionThreadService {
         // FIXME
         // use label
         if (event.endpoints.getMetadata().getName().contains("-seeds")) {
-            List<String> address = event.endpoints.getSubsets().get(0).getAddresses()
-                    .stream().map(V1EndpointAddress::getIp).collect(Collectors.toList());
-            final String dataCenterName = event.endpoints.getMetadata().getLabels().get(OperatorLabels.DATACENTER);
-            localDataSync.syncEndpointToCRD(dataCenterName, address);
+            if (event.endpoints.getSubsets() != null && !event.endpoints.getSubsets().isEmpty()) {
+                List<String> address = event.endpoints.getSubsets().get(0).getAddresses()
+                        .stream().map(V1EndpointAddress::getIp).collect(Collectors.toList());
+                System.out.println("found seed endpoint is " + address);
+                final String dataCenterName = event.endpoints.getMetadata().getLabels().get(OperatorLabels.DATACENTER);
+                localDataSync.syncEndpointToCRD(dataCenterName, address);
+            }
         }
         // TODO: map the Cluster object to one or more DC objects, then post a message on the queue for them - When we support cluster objects
     }
