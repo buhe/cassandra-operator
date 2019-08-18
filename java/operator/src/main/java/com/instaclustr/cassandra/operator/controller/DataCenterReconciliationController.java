@@ -371,7 +371,7 @@ public class DataCenterReconciliationController {
         {
             final Map<String, Object> config = new HashMap<>(); // can't use ImmutableMap as some values are null
 
-            config.put("cluster_name", dataCenterMetadata.getName()); // TODO: support multi-DC & cluster names
+            config.put("cluster_name", "netless"); // TODO: support multi-DC & cluster names
 
             config.put("listen_address", null); // let C* discover the listen address
             config.put("rpc_address", null); // let C* discover the rpc address
