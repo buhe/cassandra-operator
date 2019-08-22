@@ -23,13 +23,27 @@ import java.util.concurrent.TimeUnit;
 public class BrokerClient {
 
     private ApiClient apiClient;
-    public static final String NAMESPACE = "cassandra-operator-broker";
+    public static String NAMESPACE;
+    public static String CA;
+    public static String TOKEN;
 
     @Inject
     public BrokerClient() {
-        InputStream kubeConfig = this.getClass().getClassLoader().getResourceAsStream("kube-config");
+
+        CA = System.getenv("CA");
+        TOKEN = System.getenv("TOKEN");
+        NAMESPACE = System.getenv("NAMESPACE");
+        if (CA == null || TOKEN == null || NAMESPACE == null) {
+            throw new IllegalStateException(String.format("CA %s , TOKEN %s , NAMESPACE %s requires \"broker client\" argument.", CA, TOKEN, NAMESPACE));
+        }
+
         try {
-            apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new InputStreamReader(kubeConfig))).setOverridePatchFormat("application/json-patch+json").build();
+            apiClient = ClientBuilder
+                    .standard()
+                    .setVerifyingSsl(true)
+                    .setCertificateAuthority(CA.getBytes())
+                    .setAuthentication(new AccessTokenAuthentication(TOKEN))
+                    .setOverridePatchFormat("application/json-patch+json").build();
             apiClient.getHttpClient().setReadTimeout(60, TimeUnit.SECONDS);
         } catch (IOException e) {
             e.printStackTrace();
