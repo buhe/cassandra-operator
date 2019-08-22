@@ -21,6 +21,9 @@
       "javaType": "com.instaclustr.cassandra.operator.model.DataCenterSpec",
       "type": "object",
       "properties": {
+        "clusterName" : {
+          "type": "string"
+        },
         "replicas": {
           "description": "Number of Cassandra nodes in this data center.",
           "type": "number",

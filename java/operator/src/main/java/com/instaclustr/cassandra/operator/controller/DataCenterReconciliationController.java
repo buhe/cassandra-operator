@@ -89,7 +89,7 @@ public class DataCenterReconciliationController {
             {
                 final ImmutableList.Builder<ConfigMapVolumeMount> builder = ImmutableList.builder();
 
-                builder.add(createOrReplaceOperatorConfigMap(seedNodesService));
+                builder.add(createOrReplaceOperatorConfigMap(dataCenterSpec.getClusterName(), seedNodesService));
 
                 if (dataCenterSpec.getUserConfigMapVolumeSource() != null) {
                     builder.add(new ConfigMapVolumeMount("user-config-volume", "/tmp/user-config", dataCenterSpec.getUserConfigMapVolumeSource()));
@@ -361,7 +361,7 @@ public class DataCenterReconciliationController {
     private static final long MB = 1024 * 1024;
     private static final long GB = MB * 1024;
 
-    private ConfigMapVolumeMount createOrReplaceOperatorConfigMap(final V1Service seedNodesService) throws IOException, ApiException {
+    private ConfigMapVolumeMount createOrReplaceOperatorConfigMap(final String clusterName,final V1Service seedNodesService) throws IOException, ApiException {
         final V1ConfigMap configMap = new V1ConfigMap()
                 .metadata(dataCenterChildObjectMetadata("%s-operator-config"));
 
@@ -371,7 +371,7 @@ public class DataCenterReconciliationController {
         {
             final Map<String, Object> config = new HashMap<>(); // can't use ImmutableMap as some values are null
 
-            config.put("cluster_name", "netless"); // TODO: support multi-DC & cluster names
+            config.put("cluster_name", clusterName); // TODO: support multi-DC & cluster names
 
             config.put("listen_address", null); // let C* discover the listen address
             config.put("rpc_address", null); // let C* discover the rpc address

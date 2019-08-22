@@ -8,7 +8,6 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
 import com.instaclustr.cassandra.operator.configuration.Namespace;
 import com.instaclustr.cassandra.operator.event.EndpointWatchEvent;
-import com.instaclustr.cassandra.operator.event.StatefulSetWatchEvent;
 import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
 import com.instaclustr.cassandra.operator.model.key.EndpointKey;
 import com.instaclustr.k8s.K8sLabels;
@@ -18,7 +17,6 @@ import com.instaclustr.k8s.watch.WatchService;
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.AppsV1beta2Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.*;
 
@@ -28,9 +26,9 @@ import java.util.Collection;
 
 public class EndpointWatchModule extends AbstractModule {
     @Singleton
-    static class EnpointCache extends ResourceCache<EndpointKey, V1Endpoints> {
+    static class EndpointCache extends ResourceCache<EndpointKey, V1Endpoints> {
         @Inject
-        public EnpointCache(final EventBus eventBus, final EndpointWatchEvent.Factory eventFactory) {
+        public EndpointCache(final EventBus eventBus, final EndpointWatchEvent.Factory eventFactory) {
             super(eventBus, eventFactory);
         }
 
@@ -82,7 +80,7 @@ public class EndpointWatchModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(new TypeLiteral<ResourceCache<EndpointKey, V1Endpoints>>() {
-        }).to(EnpointCache.class);
+        }).to(EndpointCache.class);
 
         Multibinder.newSetBinder(binder(), Service.class).addBinding().to(EndpointWatchService.class);
 

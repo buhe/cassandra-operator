@@ -19,21 +19,22 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CrossDCSeedProvider implements org.apache.cassandra.locator.SeedProvider {
     private static final Logger logger = LoggerFactory.getLogger(CrossDCSeedProvider.class);
     private final ApiClient apiClient;
-    private String namespace;
+    private final String namespace;
+    private final String service;
 
     private SharedInformerFactory sharedInformerFactory = new SharedInformerFactory();
 
     public CrossDCSeedProvider(final Map<String, String> args) {
-        logger.info("init CrossDCSeedProvider");
-        System.out.println("init CrossDCSeedProvider");
         try {
+            service = args.get("service");
+            if (service == null) {
+                throw new IllegalStateException(String.format("%s requires \"service\" argument.", SeedProvider.class));
+            }
             namespace = args.get("namespace");
             if (namespace == null) {
                 throw new IllegalStateException(String.format("%s requires \"namespace\" argument.", CrossDCSeedProvider.class));
@@ -41,21 +42,22 @@ public class CrossDCSeedProvider implements org.apache.cassandra.locator.SeedPro
             apiClient = ClientBuilder.standard().build();
         } catch (Exception e) {
             logger.error("init CrossDCSeedProvider error", e);
-            System.out.println("init CrossDCSeedProvider error");
             throw new RuntimeException("connect k8s error", e);
         }
-        logger.info("init CrossDCSeedProvider end");
-        System.out.println("init CrossDCSeedProvider end");
     }
 
     @Override
     public List<InetAddress> getSeeds() {
         try {
+            final ImmutableList<InetAddress> localSeedAddresses = ImmutableList.copyOf(InetAddress.getAllByName(service));
+
+            logger.info("Discovered local dc {} seed nodes: {}", localSeedAddresses.size(), localSeedAddresses);
+
             CustomObjectsApi customObjectsApi = new CustomObjectsApi(apiClient);
             Call call = customObjectsApi.listNamespacedCustomObjectCall("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", null, null, null, 30, false, null, null);
             ApiResponse<SeedList> apiResponse = apiClient.execute(call, SeedList.class);
             SeedList seedList = apiResponse.getData();
-            List<InetAddress> endpoints = new ArrayList<>();
+            Set<InetAddress> endpoints = new HashSet<>();
             for (Seed seed : seedList.getItems()) {
                 if (seed.getSpec().getAddress() != null && !seed.getSpec().getAddress().isEmpty()) {
                     for (String endpoint : seed.getSpec().getAddress()) {
@@ -63,15 +65,15 @@ public class CrossDCSeedProvider implements org.apache.cassandra.locator.SeedPro
                     }
                 }
             }
-            logger.info("cassandra seed is " + endpoints);
+            logger.info("Discovered cross dc seed nodes: {} ", endpoints);
+            endpoints.addAll(localSeedAddresses);
+            logger.info("Discovered all seed nodes: {} ", endpoints);
             return ImmutableList.copyOf(endpoints);
         } catch (Exception e) {
-            logger.warn("listNamespacedCustomObject seed ", e);
-            System.out.println("listNamespacedCustomObject error");
+            logger.warn("fetch cross dc seed error ", e);
         }
 
         logger.info("cassandra seed empty");
-        System.out.println("cassandra seed empty");
         return ImmutableList.of();
     }
 }
