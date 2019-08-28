@@ -5,17 +5,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonSyntaxException;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import com.instaclustr.cassandra.crossdc.client.BrokerClient;
 import com.instaclustr.cassandra.operator.configuration.DeletePVC;
-import com.instaclustr.cassandra.operator.k8s.K8sLoggingSupport;
 import com.instaclustr.cassandra.operator.k8s.K8sResourceUtils;
 import com.instaclustr.cassandra.operator.k8s.OperatorLabels;
 import com.instaclustr.cassandra.operator.model.key.DataCenterKey;
 import com.instaclustr.k8s.K8sLabels;
 import com.instaclustr.slf4j.MDC;
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.AppsV1beta2Api;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,13 +26,19 @@ public class DataCenterDeletionController {
 
     final boolean allowCleanups;
 
+    private final ApiClient apiClient;
+    private final BrokerClient brokerClient;
     private final DataCenterKey dataCenterKey;
 
     @Inject
     public DataCenterDeletionController(final K8sResourceUtils k8sResourceUtils,
+                                        final ApiClient apiClient,
+                                        final BrokerClient brokerClient,
                                         @DeletePVC final boolean allowCleanups,
                                         @Assisted final DataCenterKey dataCenterKey) {
         this.k8sResourceUtils = k8sResourceUtils;
+        this.apiClient = apiClient;
+        this.brokerClient = brokerClient;
         this.dataCenterKey = dataCenterKey;
         this.allowCleanups = allowCleanups;
     }
@@ -94,6 +98,35 @@ public class DataCenterDeletionController {
                     } catch (final ApiException e) {
                         logger.error("Failed to delete Service.", e);
                     }
+                }
+            });
+
+            // delete Local seed crd
+
+            k8sResourceUtils.listNamespacedSeed(dataCenterKey.namespace, labelSelector, apiClient).forEach(seed -> {
+                try {
+                    k8sResourceUtils.deleteSeed(seed, apiClient);
+                    logger.info("Deleted Local Seed {}.", seed);
+                } catch (final JsonSyntaxException e) {
+                    logger.debug("Caught JSON exception while deleting Seed. Ignoring due to https://github.com/kubernetes-client/java/issues/86.", e);
+
+                } catch (ApiException e) {
+                    logger.error("Failed to delete seed.", e);
+                }
+            });
+
+
+            // delete broker seed crd
+
+            k8sResourceUtils.listNamespacedSeed(BrokerClient.NAMESPACE, labelSelector, brokerClient.getBrokerClient()).forEach(seed -> {
+                try {
+                    k8sResourceUtils.deleteSeed(seed, brokerClient.getBrokerClient());
+                    logger.info("Deleted Remote Seed {}.", seed);
+                } catch (final JsonSyntaxException e) {
+                    logger.debug("Caught JSON exception while deleting Seed. Ignoring due to https://github.com/kubernetes-client/java/issues/86.", e);
+
+                } catch (ApiException e) {
+                    logger.error("Failed to delete seed.", e);
                 }
             });
 

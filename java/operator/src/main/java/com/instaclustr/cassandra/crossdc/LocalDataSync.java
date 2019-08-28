@@ -11,6 +11,7 @@ import com.instaclustr.cassandra.operator.k8s.PatchOperation;
 import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.SeedList;
 import com.instaclustr.cassandra.operator.model.SeedSpec;
+import com.instaclustr.k8s.K8sLabels;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CustomObjectsApi;
@@ -55,6 +56,7 @@ public class LocalDataSync implements Callable<Void> {
                 new V1ObjectMeta()
                         .namespace(namespace)
                         .putLabelsItem(OperatorLabels.DATACENTER, dataCenterName)
+                        .putLabelsItem(K8sLabels.MANAGED_BY, OperatorLabels.OPERATOR_IDENTIFIER)
                         .name(seedName));
         seed.withApiVersion("stable.instaclustr.com/v1").withKind("CassandraSeed");
         seed.withSpec(new SeedSpec().withAddress(address));

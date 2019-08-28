@@ -3,11 +3,14 @@ package com.instaclustr.cassandra.operator.k8s;
 import com.google.common.base.Strings;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;
+import com.instaclustr.cassandra.operator.model.Seed;
+import com.instaclustr.cassandra.operator.model.SeedList;
 import com.instaclustr.slf4j.MDC;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1beta2Api;
 import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,6 +100,12 @@ public class K8sResourceUtils {
         final V1ObjectMeta metadata = service.getMetadata();
 
         coreApi.deleteNamespacedService(metadata.getName(), metadata.getNamespace(),null ,new V1DeleteOptions(), null, null, null, null);
+    }
+
+    public void deleteSeed(final Seed seed, final ApiClient apiClient) throws ApiException {
+        final V1ObjectMeta metadata = seed.getMetadata();
+        CustomObjectsApi customObjectsApi = new CustomObjectsApi(apiClient);
+        customObjectsApi.deleteNamespacedCustomObject("stable.instaclustr.com", "v1", metadata.getNamespace(), "cassandra-seeds", metadata.getName(), new V1DeleteOptions(), null, null, null);
     }
 
     public void deleteConfigMap(final V1ConfigMap configMap) throws ApiException {
@@ -304,6 +313,37 @@ public class K8sResourceUtils {
         }
 
         final V1ServicePage firstPage = new V1ServicePage(null);
+
+        return new ResourceListIterable<>(firstPage);
+    }
+
+
+    public Iterable<Seed> listNamespacedSeed(final String namespace, @Nullable final String labelSelector, ApiClient apiClient) throws ApiException {
+        class SeedPage implements ResourceListIterable.Page<Seed> {
+            private final SeedList serviceList;
+
+            private SeedPage(final String continueToken) throws ApiException {
+                CustomObjectsApi customObjectsApi = new CustomObjectsApi(apiClient);
+                serviceList = (SeedList) customObjectsApi.listNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", null, labelSelector, null, null, false);
+            }
+
+            @Override
+            public Collection<Seed> items() {
+                return serviceList.getItems();
+            }
+
+            @Override
+            public ResourceListIterable.Page<Seed> nextPage() throws ApiException {
+                final String continueToken = serviceList.getMetadata().getContinue();
+
+                if (Strings.isNullOrEmpty(continueToken))
+                    return null;
+
+                return new SeedPage(continueToken);
+            }
+        }
+
+        final SeedPage firstPage = new SeedPage(null);
 
         return new ResourceListIterable<>(firstPage);
     }
