@@ -6,8 +6,10 @@ import com.google.common.collect.Iterators;
 import com.instaclustr.cassandra.operator.model.Seed;
 import com.instaclustr.cassandra.operator.model.SeedList;
 import com.instaclustr.slf4j.MDC;
+import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.ApiResponse;
 import io.kubernetes.client.apis.AppsV1beta2Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.CustomObjectsApi;
@@ -319,32 +321,9 @@ public class K8sResourceUtils {
 
 
     public Iterable<Seed> listNamespacedSeed(final String namespace, @Nullable final String labelSelector, ApiClient apiClient) throws ApiException {
-        class SeedPage implements ResourceListIterable.Page<Seed> {
-            private final SeedList serviceList;
-
-            private SeedPage(final String continueToken) throws ApiException {
-                CustomObjectsApi customObjectsApi = new CustomObjectsApi(apiClient);
-                serviceList = (SeedList) customObjectsApi.listNamespacedCustomObject("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", null, labelSelector, null, null, false);
-            }
-
-            @Override
-            public Collection<Seed> items() {
-                return serviceList.getItems();
-            }
-
-            @Override
-            public ResourceListIterable.Page<Seed> nextPage() throws ApiException {
-                final String continueToken = serviceList.getMetadata().getContinue();
-
-                if (Strings.isNullOrEmpty(continueToken))
-                    return null;
-
-                return new SeedPage(continueToken);
-            }
-        }
-
-        final SeedPage firstPage = new SeedPage(null);
-
-        return new ResourceListIterable<>(firstPage);
+        CustomObjectsApi customObjectsApi = new CustomObjectsApi(apiClient);
+        Call call = customObjectsApi.listNamespacedCustomObjectCall("stable.instaclustr.com", "v1", namespace, "cassandra-seeds", null, labelSelector, null, null, false, null, null);
+        ApiResponse<SeedList> apiResponse = apiClient.execute(call, SeedList.class);
+        return apiResponse.getData().getItems();
     }
 }
