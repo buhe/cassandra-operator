@@ -379,7 +379,7 @@ public class DataCenterReconciliationController {
             // messy -- constructs via org.apache.cassandra.config.ParameterizedClass.ParameterizedClass(java.util.Map<java.lang.String,?>)
             config.put("seed_provider", ImmutableList.of(ImmutableMap.of(
                             "class_name", "com.instaclustr.cassandra.k8s.CrossDCSeedProvider",
-                            "parameters", ImmutableList.of(ImmutableMap.of("namespace", seedNodesService.getMetadata().getNamespace()))
+                            "parameters", ImmutableList.of(ImmutableMap.of("namespace", seedNodesService.getMetadata().getNamespace(),"service", seedNodesService.getMetadata().getName()))
                     )));
 
 
